@@ -1,0 +1,35 @@
+#:kivy 1.0
+WidgetsExample:
+
+<WidgetsExample>:
+    cols: 3
+    ToggleButton:
+        text: "OFF" 
+        size_hint: 0.3, 1 
+        on_state: root.on_toggle_button_state(self)
+    Button:
+        text: "Count"
+        on_press: root.on_button_click()
+        disabled: not root.enable_count
+    Label:
+        text: root.my_text
+        color: root.count_color
+        font_name: "fonts/digit.ttf"
+        font_size: "80dp"
+    Switch:
+        id: switch
+        size_hint: 0.3, 1
+    Slider:
+        id: slider
+        min: 0
+        max: 100
+        step: 1
+        value: 50
+        orientation: "vertical"
+        disabled: not switch.active
+        on_value: root.on_slider_value(self)
+    Label:
+        text: str(int(slider.value))
+        color: root.slider_color
+        font_name: "fonts/digit.ttf"
+        font_size: "80dp"

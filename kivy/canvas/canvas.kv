@@ -1,0 +1,17 @@
+#:kivy 1.0
+CanvasExample:
+
+<CanvasExample>:
+    canvas:
+        Line:
+            points: (self.width/2, 0, self.width/2, self.height)
+        Line:
+            points: (0, self.height/2, self.width, self.height/2)
+        Rectangle:
+            pos: root.rect_pos
+            size: 150, 200
+
+    Button:
+        text: "Move rectangle"
+        size: 300,300
+        on_press: root.move_rectangle(self)

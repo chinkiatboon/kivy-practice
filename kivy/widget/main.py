@@ -34,8 +34,6 @@ class WidgetsExample(GridLayout):
     def on_slider_value(self, slider):
         self.slider_color = [1,(100-int(slider.value))/100,(100-int(slider.value))/100,1]
 
-    def on_text_validate(self, value):
-        self.text_value = value.text
 
 class TheLabApp(App):
     pass

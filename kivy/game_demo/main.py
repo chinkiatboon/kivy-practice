@@ -41,8 +41,36 @@ class MainWidget(Widget):
 
         for line in self.vertical_lines:
             x = int(self.width/2 + offset * self.width * self.LINE_SPACING)
-            line.points = [x, 0, x, self.height]
+            x1, y1 = self.transform(x, 0)
+            x2, y2 = self.transform(x, self.height)
+            line.points = [x1, y1, x2, y2]
             offset += 1
+
+    def transform(self, x, y):
+        # return self.transform_2D(x,y)
+        return self.transform_perspective(x,y)
+
+    def transform_2D(self, x, y):
+        """
+        To be used if we want to see the game board from the top (2D).
+        For debugging purposes.
+        """
+        return x, y
+
+    def transform_perspective(self, x, y):
+        """
+        Transforms (x,y) coordinates to give a more 3D feel.
+        """
+        # Calculate new y based on proportion 
+        y = y / self.height * self.perspective_point_y
+
+        # Calculate new x. We can visually note that new x is dependent on y.
+        x_diff = x - self.perspective_point_x  
+        y_factor = (self.perspective_point_y - y )/self.perspective_point_y
+        x = self.perspective_point_x + x_diff * y_factor  # Recalculate x based on 
+                                                          # proportion of y 
+
+        return x, y
 
 class SpaceshipApp(App):
     pass

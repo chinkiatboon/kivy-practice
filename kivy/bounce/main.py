@@ -16,7 +16,7 @@ class Bounce(Widget):
         self.vx = 10
         self.vy = 10
         self.size_x, self.size_y = self.circle_size
-
+        print('hi')
     def on_size(self, *args):
         print(f'Height: {str(self.height)}, Width: {self.width}')
         self.circle_pos = [self.center_x-self.size_x/2, self.center_y-self.size_y/2]

@@ -8,7 +8,7 @@ from kivy.graphics.context_instructions import Color
 from kivy.graphics.vertex_instructions import Line
 
 class MainWidget(Widget):
-    NUM_LINES = 7       # Best to use odd numbers for there to be a centre line
+    NUM_LINES = 6        
     LINE_SPACING = 0.1  # Percentage instead of numeric figure
 
     perspective_point_x = NumericProperty(0)
@@ -40,22 +40,23 @@ class MainWidget(Widget):
         offset = -(int(self.NUM_LINES/2))
 
         for line in self.vertical_lines:
-            x = int(self.width/2 + offset * self.width * self.LINE_SPACING)
+            x = self.width/2 + offset * self.width * self.LINE_SPACING
+            x = int(x + self.width*self.LINE_SPACING/2)  # To center board
             x1, y1 = self.transform(x, 0)
             x2, y2 = self.transform(x, self.height)
             line.points = [x1, y1, x2, y2]
             offset += 1
 
     def transform(self, x, y):
-        # return self.transform_2D(x,y)
-        return self.transform_perspective(x,y)
+        return self.transform_2D(x,y)
+        # return self.transform_perspective(x,y)
 
     def transform_2D(self, x, y):
         """
         To be used if we want to see the game board from the top (2D).
         For debugging purposes.
         """
-        return x, y
+        return int(x), int(y)
 
     def transform_perspective(self, x, y):
         """
@@ -63,6 +64,8 @@ class MainWidget(Widget):
         """
         # Calculate new y based on proportion 
         y = y / self.height * self.perspective_point_y
+        if y > self.perspective_point_y:
+            y = self.perspective_point_y
 
         # Calculate new x. We can visually note that new x is dependent on y.
         x_diff = x - self.perspective_point_x  
@@ -70,7 +73,7 @@ class MainWidget(Widget):
         x = self.perspective_point_x + x_diff * y_factor  # Recalculate x based on 
                                                           # proportion of y 
 
-        return x, y
+        return int(x), int(y)
 
 class SpaceshipApp(App):
     pass

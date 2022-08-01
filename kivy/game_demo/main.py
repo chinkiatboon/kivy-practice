@@ -67,17 +67,36 @@ class MainWidget(Widget):
             for i in range(self.H_NUM_LINES):
                 self.horizontal_lines.append(Line())
 
+    def get_x_line_coordinates(self, index):
+        """
+        Function to obtain x coordinates of any vertical line drawn on screen.
+
+        Args:
+            index (int): ith vertical line where i = [-n, -n+1, ... n-1, n],
+                and total number of lines = 2n + 1  
+        """
+        true_index = index - 0.5  # remove 0.5 used to center board
+        spacing = self.V_LINE_SPACING * self.width
+        central_line_x = self.perspective_point_x  # the spaceship shall remain in center
+
+        # Consider a case where index = 0.
+        # This line is by default 0.5 spacings to the left of the central line.
+        x = central_line_x + true_index * spacing + self.current_offset_x
+
+        return x
+
     def update_vertical_lines(self):
         offset = -self.V_NUM_LINES/2 + 0.5  # 0.5 to center board
         self.x_min = self.width/2 + offset * self.width * self.V_LINE_SPACING
         self.x_max = self.width/2 - offset * self.width * self.V_LINE_SPACING
-
-        for line in self.vertical_lines:
-            x = self.width/2 + offset * self.width * self.V_LINE_SPACING + self.current_offset_x
+        start_index = -int(self.V_NUM_LINES/2) + 1
+        end_index = start_index + self.V_NUM_LINES
+        
+        for i in range(start_index, end_index):
+            x = self.get_x_line_coordinates(i)
             x1, y1 = self.transform(x, 0)
             x2, y2 = self.transform(x, self.height)
-            line.points = [x1, y1, x2, y2]
-            offset += 1
+            self.vertical_lines[i].points = [x1, y1, x2, y2]
 
     def update_horizontal_lines(self):
         line_count = 0

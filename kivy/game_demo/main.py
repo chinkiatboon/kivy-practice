@@ -11,22 +11,26 @@ from kivy.core.window import Window
 from kivy.properties import NumericProperty, ListProperty, Clock
 from kivy.uix.widget import Widget
 from kivy.graphics.context_instructions import Color
-from kivy.graphics.vertex_instructions import Line, Quad
+from kivy.graphics.vertex_instructions import Line, Quad, Triangle
 
 class MainWidget(Widget):
     from transforms import transform, transform_2D, transform_perspective
     from user_actions import on_touch_down, on_touch_up, on_keyboard_down, on_keyboard_up, keyboard_closed
 
-    V_NUM_LINES = 6        
-    V_LINE_SPACING = 0.1  # Percentage instead of numeric figure
+    SHIP_WIDTH = 0.1      # Percentage instead of numeric figure (Percentage of screen width)
+    SHIP_HEIGHT = 0.035
+    SHIP_FWD = 0.04       # Distance from end of screen to ship (Percentage of screen height)
+
+    V_NUM_LINES = 8        
+    V_LINE_SPACING = 0.3  
 
     H_NUM_LINES = 12
-    H_LINE_SPACING = 0.1
+    H_LINE_SPACING = 0.15
 
-    NUM_TILES = 10
+    NUM_TILES = 16
 
     VERTICAL_SPEED = 1
-    HORIZONTAL_SPEED = 10
+    HORIZONTAL_SPEED = 1.5
 
     perspective_point_x = NumericProperty(0)
     perspective_point_y = NumericProperty(0)
@@ -44,6 +48,8 @@ class MainWidget(Widget):
     tiles = ListProperty([])
     tile_coordinates = ListProperty([])
 
+    ship_coordinates = ListProperty([])
+
     step = 0       # increases whenever a horizontal line is "crossed"
     latest_y = 0   # keeps track of latest y index generated
     latest_x = 0   # keeps track of latest x index generated
@@ -53,6 +59,7 @@ class MainWidget(Widget):
         self.initialize_vertical_lines()
         self.initialize_horizontal_lines()
         self.initialize_tiles()
+        self.initialize_ship()
         self.generate_tile_coordinates()
 
         if self.is_desktop():
@@ -66,6 +73,31 @@ class MainWidget(Widget):
         print(f'Height: {str(self.height)}, Width: {self.width}')
         self.update_vertical_lines()
         self.update_horizontal_lines()
+
+    def initialize_ship(self):
+        with self.canvas:
+            Color(0,0,0)
+            self.ship = Triangle()
+            for i in range(3):
+                self.ship_coordinates.append((0,0))
+
+    def update_ship(self):
+        x_mid = self.perspective_point_x
+        x_left = x_mid - self.SHIP_WIDTH * self.width / 2
+        x_right = x_mid + self.SHIP_WIDTH * self.width / 2 
+
+        y_top = (self.SHIP_HEIGHT + self.SHIP_FWD) * self.height
+        y_bottom = self.SHIP_FWD * self.height
+
+        self.ship_coordinates[0] = (x_left,y_bottom)
+        self.ship_coordinates[1] = (x_mid, y_top)
+        self.ship_coordinates[2] = (x_right, y_bottom)
+
+        x1, y1 = self.transform(*self.ship_coordinates[0])
+        x2, y2 = self.transform(*self.ship_coordinates[1])
+        x3, y3 = self.transform(*self.ship_coordinates[2])
+
+        self.ship.points = [x1, y1, x2, y2, x3, y3]
 
     def initialize_vertical_lines(self):
         with self.canvas:
@@ -135,8 +167,8 @@ class MainWidget(Widget):
 
         for i in range(start_index, end_index):
             y = self.get_y_line_coordinates(i)
-            x1, y1 = self.transform(self.x_min+self.current_offset_x, y)
-            x2, y2 = self.transform(self.x_max+self.current_offset_x, y)
+            x1, y1 = self.transform(self.x_min, y)
+            x2, y2 = self.transform(self.x_max, y)
             self.horizontal_lines[i].points = [x1, y1, x2, y2]
 
     def generate_tile_coordinates(self):
@@ -149,19 +181,18 @@ class MainWidget(Widget):
             if self.tile_coordinates[i][1] < self.step:
                 del self.tile_coordinates[i]
 
-        # for i in range(len(self.tile_coordinates), self.NUM_TILES):
-        #     self.tile_coordinates.append((0, self.latest_y))
-        #     self.latest_y += 1
-
         for i in range(len(self.tile_coordinates), self.NUM_TILES):
-            self.tile_coordinates.append((self.latest_x, self.latest_y))
-            print(f'latest coordinates: {(self.latest_x, self.latest_y)}')
-            if r == -1 and self.latest_x-1 >= start_index:
-                self.latest_x -= 1
+            if self.step <= self.NUM_TILES:
+                self.tile_coordinates.append((0, self.latest_y))
+            else:
                 self.tile_coordinates.append((self.latest_x, self.latest_y))
-            elif r == 1 and self.latest_x+1 < end_index-1:
-                self.latest_x += 1
-                self.tile_coordinates.append((self.latest_x, self.latest_y))
+                print(f'number of tiles in list: {len(self.tile_coordinates)}')
+                if r == -1 and self.latest_x-1 >= start_index:
+                    self.latest_x -= 1
+                    self.tile_coordinates.append((self.latest_x, self.latest_y))
+                elif r == 1 and self.latest_x+1 < end_index-1:
+                    self.latest_x += 1
+                    self.tile_coordinates.append((self.latest_x, self.latest_y))
             self.latest_y += 1
 
     def get_tile_coordinates(self, index_x, index_y):
@@ -187,8 +218,9 @@ class MainWidget(Widget):
         self.update_vertical_lines()
         self.update_horizontal_lines()
         self.update_tiles()
-        self.current_offset_y += self.VERTICAL_SPEED * dt * 60
-        self.current_offset_x += self.move_factor * self.HORIZONTAL_SPEED * dt * 60
+        self.update_ship()
+        self.current_offset_y += self.VERTICAL_SPEED * dt * 60 * self.height / 200
+        self.current_offset_x += self.move_factor * self.HORIZONTAL_SPEED * dt * 60 * self.width / 200
 
         if self.current_offset_y > self.H_LINE_SPACING * self.height:
             self.current_offset_y -= self.H_LINE_SPACING * self.height

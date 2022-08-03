@@ -21,13 +21,13 @@ class MainWidget(Widget):
     SHIP_HEIGHT = 0.035
     SHIP_FWD = 0.04       # Distance from end of screen to ship (Percentage of screen height)
 
-    V_NUM_LINES = 8        
+    V_NUM_LINES = 6      
     V_LINE_SPACING = 0.3  
 
     H_NUM_LINES = 12
     H_LINE_SPACING = 0.15
 
-    NUM_TILES = 16
+    NUM_TILES = 12
 
     VERTICAL_SPEED = 1
     HORIZONTAL_SPEED = 1.5
@@ -53,6 +53,8 @@ class MainWidget(Widget):
     step = 0       # increases whenever a horizontal line is "crossed"
     latest_y = 0   # keeps track of latest y index generated
     latest_x = 0   # keeps track of latest x index generated
+
+    game_over = False
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -186,13 +188,13 @@ class MainWidget(Widget):
                 self.tile_coordinates.append((0, self.latest_y))
             else:
                 self.tile_coordinates.append((self.latest_x, self.latest_y))
-                print(f'number of tiles in list: {len(self.tile_coordinates)}')
                 if r == -1 and self.latest_x-1 >= start_index:
                     self.latest_x -= 1
                     self.tile_coordinates.append((self.latest_x, self.latest_y))
                 elif r == 1 and self.latest_x+1 < end_index-1:
                     self.latest_x += 1
                     self.tile_coordinates.append((self.latest_x, self.latest_y))
+
             self.latest_y += 1
 
     def get_tile_coordinates(self, index_x, index_y):
@@ -200,6 +202,29 @@ class MainWidget(Widget):
         x = self.get_x_line_coordinates(index_x)
         y = self.get_y_line_coordinates(index_y)
         return x, y
+
+    def check_on_path(self): 
+        left_on_path = False
+        top_on_path = False
+        right_on_path = False
+
+        for i in range(self.NUM_TILES):
+            if self.tile_coordinates[i][1] < self.step + 2:  # tiles too far away arent useful in checking for collision
+                x, y = self.tile_coordinates[i]
+                x_min, y_min = self.get_tile_coordinates(x,y)
+                x_max, y_max = self.get_tile_coordinates(x+1, y+1)
+
+                if x_min <= self.ship_coordinates[0][0] <= x_max and y_min <= self.ship_coordinates[0][1] <= y_max:  # if left point on path
+                    left_on_path = True
+                if x_min <= self.ship_coordinates[1][0] <= x_max and y_min <= self.ship_coordinates[1][1] <= y_max:  # if top point on path
+                    top_on_path = True
+                if x_min <= self.ship_coordinates[2][0] <= x_max and y_min <= self.ship_coordinates[2][1] <= y_max:  # if right point on path
+                    right_on_path = True
+                
+        if False in [left_on_path,top_on_path,right_on_path]:
+            return False
+        else:
+            return True
 
     def update_tiles(self):
         for i in range(self.NUM_TILES):
@@ -219,13 +244,17 @@ class MainWidget(Widget):
         self.update_horizontal_lines()
         self.update_tiles()
         self.update_ship()
-        self.current_offset_y += self.VERTICAL_SPEED * dt * 60 * self.height / 200
-        self.current_offset_x += self.move_factor * self.HORIZONTAL_SPEED * dt * 60 * self.width / 200
+        if self.check_on_path() is False:
+            print(f"GAME OVER!")
+            self.game_over = True
 
-        if self.current_offset_y > self.H_LINE_SPACING * self.height:
-            self.current_offset_y -= self.H_LINE_SPACING * self.height
-            self.step += 1
-            self.generate_tile_coordinates() # Generate new tiles upon new step
+        if self.game_over is False:
+            self.current_offset_y += self.VERTICAL_SPEED * dt * 60 * self.height / 200
+            self.current_offset_x += self.move_factor * self.HORIZONTAL_SPEED * dt * 60 * self.width / 200
+            while self.current_offset_y > self.H_LINE_SPACING * self.height:
+                self.current_offset_y -= self.H_LINE_SPACING * self.height
+                self.step += 1
+                self.generate_tile_coordinates() # Generate new tiles upon new step
 
     def is_desktop(self):
         if platform in ('linux', 'win', 'macosx'):

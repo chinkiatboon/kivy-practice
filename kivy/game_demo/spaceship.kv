@@ -1,9 +1,14 @@
 #:kivy 1.0
+#:import menu menu
+
 MainWidget:
 
 <MainWidget>:
+    menu_widget: menu_widget
     perspective_point_x: self.width/2
     perspective_point_y: self.height * 0.75
+    MenuWidget:
+        id: menu_widget
     # canvas:
     #     Color:
     #         rgb: 1, 1, 1

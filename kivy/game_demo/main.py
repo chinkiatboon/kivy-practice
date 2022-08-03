@@ -8,12 +8,15 @@ Config.set('graphics', 'height', '600')
 from kivy import platform
 from kivy.app import App
 from kivy.core.window import Window
-from kivy.properties import NumericProperty, ListProperty, Clock
-from kivy.uix.widget import Widget
+from kivy.lang import Builder
+from kivy.properties import NumericProperty, ListProperty, Clock, ObjectProperty, StringProperty
+from kivy.uix.relativelayout import RelativeLayout
 from kivy.graphics.context_instructions import Color
 from kivy.graphics.vertex_instructions import Line, Quad, Triangle
 
-class MainWidget(Widget):
+Builder.load_file("menu.kv")
+
+class MainWidget(RelativeLayout):
     from transforms import transform, transform_2D, transform_perspective
     from user_actions import on_touch_down, on_touch_up, on_keyboard_down, on_keyboard_up, keyboard_closed
 
@@ -32,8 +35,11 @@ class MainWidget(Widget):
     VERTICAL_SPEED = 1
     HORIZONTAL_SPEED = 1.5
 
+    menu_widget = ObjectProperty()
     perspective_point_x = NumericProperty(0)
     perspective_point_y = NumericProperty(0)
+    title_text = StringProperty("SPACESHIP")
+    button_text = StringProperty("Start Game")
 
     vertical_lines = []
     horizontal_lines = []
@@ -54,7 +60,7 @@ class MainWidget(Widget):
     latest_y = 0   # keeps track of latest y index generated
     latest_x = 0   # keeps track of latest x index generated
 
-    game_over = False
+    game_over = True
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -70,6 +76,30 @@ class MainWidget(Widget):
             self.keyboard.bind(on_key_up = self.on_keyboard_up)
 
         Clock.schedule_interval(self.update, 1/60)
+
+    def initialize(self):
+        self.current_offset_x = 0
+        self.current_offset_y = 0
+        self.move_factor = 0
+        self.step = 0       # increases whenever a horizontal line is "crossed"
+        self.latest_y = 0   # keeps track of latest y index generated
+        self.latest_x = 0   # keeps track of latest x index generated
+
+        self.tile_coordinates = []
+        self.generate_tile_coordinates()
+
+        self.game_over = False
+
+    def start_game(self):
+        print(f"click")
+        self.game_over = False
+        self.initialize()
+        self.menu_widget.opacity = 0
+
+    def game_over_display(self):
+        self.title_text = "Game over!"
+        self.button_text = "Restart"
+        self.menu_widget.opacity = 1
 
     def on_size(self, *args):
         print(f'Height: {str(self.height)}, Width: {self.width}')
@@ -222,6 +252,7 @@ class MainWidget(Widget):
                     right_on_path = True
                 
         if False in [left_on_path,top_on_path,right_on_path]:
+            self.game_over_display()
             return False
         else:
             return True
@@ -244,8 +275,7 @@ class MainWidget(Widget):
         self.update_horizontal_lines()
         self.update_tiles()
         self.update_ship()
-        if self.check_on_path() is False:
-            print(f"GAME OVER!")
+        if self.game_over is False and self.check_on_path() is False:
             self.game_over = True
 
         if self.game_over is False:
